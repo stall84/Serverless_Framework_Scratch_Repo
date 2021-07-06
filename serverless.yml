@@ -1,0 +1,61 @@
+service: stepfuncsoffline
+
+frameworkVersion: ">=1.21.0 <=2.0.0"
+
+plugins:
+  - serverless-step-functions
+  - serverless-step-functions-offline
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  stage: dev
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+        - s3:*
+      Resource: "*"
+custom:
+  stepFunctionsOffline:
+    Test1: Test1
+    Test2: Test2
+
+functions:
+  Test1:
+    handler: test1.handler
+  Test2:
+    handler: test2.handler
+
+stepFunctions:
+  stateMachines:
+    OfflineStateMachine:
+      definition:
+        StartAt: Wait2Start
+        States:
+          Wait2Start:
+            Type: Wait
+            Seconds: 2
+            Next: Test1
+          Test1:
+            Type: Task
+            Resource: !GetAtt Test1.Arn
+            Next: WaitMid
+          WaitMid:
+            Type: Wait
+            Seconds: 2
+            Next: Test2
+          Test2:
+            Type: Task
+            Resource: !GetAtt Test2.Arn
+            Next: Pass2Wait
+          Pass2Wait:
+            Type: Pass
+            Next: Wait2End
+          Wait2End:
+            Type: Wait
+            Seconds: 2
+            End: true
